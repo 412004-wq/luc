@@ -86,30 +86,27 @@ function initializeCurrencySearch() {
 
     // 搜索功能
     searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toUpperCase();
-        
+        const searchTerm = e.target.value.trim().toUpperCase();
+        const codes = Object.keys(availableCurrencies);
+
         if (!searchTerm) {
-            displayCurrencyDropdown(Object.keys(availableCurrencies), dropdown);
+            displayCurrencyDropdown(codes, dropdown);
             dropdown.classList.remove('hidden');
             return;
         }
 
-        const filtered = Object.keys(availableCurrencies).filter(code =>
-            code.includes(searchTerm) || 
+        const filtered = codes.filter(code =>
+            code.includes(searchTerm) ||
             availableCurrencies[code].toUpperCase().includes(searchTerm)
         );
 
-        if (filtered.length > 0) {
-            displayCurrencyDropdown(filtered, dropdown);
-            dropdown.classList.remove('hidden');
-        } else {
-            dropdown.classList.add('hidden');
-        }
+        displayCurrencyDropdown(filtered, dropdown);
+        dropdown.classList.toggle('hidden', filtered.length === 0);
     });
 
     // 點擊外部關閉下拉菜單
     document.addEventListener('click', (e) => {
-        if (e.target !== searchInput && e.target !== dropdown) {
+        if (!dropdown.contains(e.target) && e.target !== searchInput) {
             dropdown.classList.add('hidden');
         }
     });
@@ -117,7 +114,27 @@ function initializeCurrencySearch() {
     // 焦點時顯示下拉菜單
     searchInput.addEventListener('focus', () => {
         if (!searchInput.value) {
-            dropdown.classList.remove('hidden');
+            displayCurrencyDropdown(Object.keys(availableCurrencies), dropdown);
+        }
+        dropdown.classList.remove('hidden');
+    });
+
+    // 允許按 Enter 直接選擇第一項
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const searchTerm = searchInput.value.trim().toUpperCase();
+            const exact = Object.keys(availableCurrencies).find(code => code === searchTerm);
+            if (exact) {
+                selectCurrency(exact);
+                return;
+            }
+            const partial = Object.keys(availableCurrencies).find(code =>
+                code.startsWith(searchTerm) || availableCurrencies[code].toUpperCase().startsWith(searchTerm)
+            );
+            if (partial) {
+                selectCurrency(partial);
+            }
         }
     });
 }
@@ -215,11 +232,10 @@ async function handleFetchRate(e) {
     document.getElementById('fetchRateBtn').disabled = true;
 
     try {
-        // 呼叫 Frankfurter API (免費、無需Key)
-        const url = `https://api.frankfurter.dev/v1/latest?base=${currency}&symbols=TWD`;
-        
+        // 使用可公開的匯率 API
+        const url = `https://open.er-api.com/v6/latest/${currency}`;
         console.log('正在調用 API:', url);
-        
+
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -227,11 +243,10 @@ async function handleFetchRate(e) {
         }
 
         const data = await response.json();
-        
         console.log('API 響應:', data);
 
-        if (!data.rates || !data.rates.TWD) {
-            throw new Error('無法獲取匯率數據');
+        if (!data || data.result !== 'success' || !data.rates || typeof data.rates.TWD !== 'number') {
+            throw new Error('無法獲取正確的匯率數據');
         }
 
         const exchangeRate = data.rates.TWD;
