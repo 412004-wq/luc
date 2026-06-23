@@ -43,6 +43,7 @@ let currentMonth = new Date();
 document.addEventListener('DOMContentLoaded', () => {
     initializeUI();
     loadExpensesFromLocalStorage();
+    initializeTestDataIfEmpty();
     loadBudgetFromLocalStorage();
     renderExpenseList();
     updateBudgetProgress();
@@ -663,6 +664,59 @@ function loadExpensesFromLocalStorage() {
             console.error('無法讀取本地資料', e);
             expenses = [];
         }
+    }
+}
+
+function initializeTestDataIfEmpty() {
+    // 如果沒有消費記錄，添加測試數據
+    if (expenses.length === 0) {
+        const today = new Date();
+        const testExpenses = [
+            {
+                id: Date.now() - 3000,
+                itemName: '東京民宿',
+                currency: 'JPY',
+                foreignAmount: 15000,
+                exchangeRate: 0.2145,
+                twdAmount: 3217.5,
+                notes: '2 晚東京新宿飯店',
+                timestamp: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2).toISOString()
+            },
+            {
+                id: Date.now() - 2000,
+                itemName: '購物',
+                currency: 'USD',
+                foreignAmount: 120,
+                exchangeRate: 31.5,
+                twdAmount: 3780,
+                notes: 'Amazon 購物',
+                timestamp: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).toISOString()
+            },
+            {
+                id: Date.now() - 1000,
+                itemName: '韓國機票',
+                currency: 'KRW',
+                foreignAmount: 450000,
+                exchangeRate: 0.0237,
+                twdAmount: 10665,
+                notes: '首爾來回機票',
+                timestamp: new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString()
+            },
+            {
+                id: Date.now(),
+                itemName: '新加坡餐廳',
+                currency: 'SGD',
+                foreignAmount: 85,
+                exchangeRate: 23.5,
+                twdAmount: 1997.5,
+                notes: '人均新幣 $85',
+                timestamp: new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString()
+            }
+        ];
+        
+        expenses = testExpenses;
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+        console.log('已初始化測試數據');
     }
 }
 
