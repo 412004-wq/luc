@@ -47,13 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderExpenseList();
     updateBudgetProgress();
     setCurrentMonth();
-    attachEventListeners();
     initializeCurrencySearch();
 });
-
-// ============================================
-// UI 初始化
-// ============================================
 
 function initializeUI() {
     // 分頁按鈕
@@ -506,43 +501,47 @@ function renderExpenseList() {
     if (expenses.length === 0) {
         expenseList.innerHTML = `
             <div class="text-center py-12 text-gray-500">
-                <p class="text-lg">📭 目前沒有記錄</p>
+                <p class="text-lg">📭 目前沒有記錄，快去新增第一筆消費吧！</p>
             </div>
         `;
         return;
     }
 
-    // 按時間倒序排列
     const sortedExpenses = [...expenses].sort((a, b) => 
         new Date(b.timestamp) - new Date(a.timestamp)
     );
 
-    expenseList.innerHTML = sortedExpenses.map(exp => `
-        <div class="expense-item p-4 bg-amber-50 border-2 border-amber-300 rounded-lg cursor-pointer hover:bg-amber-100 transition-all">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <p class="font-bold text-amber-900">${exp.itemName}</p>
-                    <p class="text-sm text-gray-600">${formatDate(exp.timestamp)}</p>
-                </div>
-                <span class="inline-block px-3 py-1 bg-orange-200 text-orange-900 font-bold rounded-full text-sm">
-                    ${exp.currency}
-                </span>
-            </div>
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-xs text-gray-600">外幣金額</p>
-                    <p class="font-bold text-lg">${exp.foreignAmount.toFixed(2)} ${exp.currency}</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs text-gray-600">折合台幣</p>
-                    <p class="font-bold text-lg text-green-600">$ ${exp.twdAmount.toFixed(2)}</p>
-                </div>
-            </div>
-            <button class="mt-3 w-full px-3 py-2 text-sm bg-blue-100 text-blue-900 rounded font-semibold hover:bg-blue-200 transition-colors" onclick="openSideDrawer(${exp.id})">
-                👁️ 查看詳細
-            </button>
-        </div>
-    `).join('');
+    expenseList.innerHTML = `
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">項目</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">幣別</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">外幣金額</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">TWD</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                ${sortedExpenses.map(exp => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-4 text-sm text-gray-700">${formatDate(exp.timestamp)}</td>
+                        <td class="px-4 py-4 text-sm font-semibold text-gray-900">${exp.itemName}</td>
+                        <td class="px-4 py-4 text-sm text-gray-700">${exp.currency}</td>
+                        <td class="px-4 py-4 text-sm text-right text-gray-700">${exp.foreignAmount.toFixed(2)}</td>
+                        <td class="px-4 py-4 text-sm text-right font-bold text-green-700">$ ${exp.twdAmount.toFixed(2)}</td>
+                        <td class="px-4 py-4 text-sm text-right">
+                            <button class="inline-flex items-center px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full hover:bg-blue-200"
+                                onclick="openSideDrawer(${exp.id})">
+                                查看
+                            </button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
 }
 
 // ============================================
