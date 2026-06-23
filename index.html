@@ -78,25 +78,33 @@
                             required>
                     </div>
 
-                    <!-- 外幣幣別 -->
+                    <!-- 外幣幣別搜索 -->
                     <div class="form-group">
                         <label class="block text-sm font-bold text-amber-900 mb-2">外幣幣別 *</label>
-                        <select 
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="currencySearch" 
+                                name="currencySearch"
+                                placeholder="搜尋幣別（如：USD、JPY、CNY...）"
+                                class="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-300 transition-all"
+                                autocomplete="off">
+                            <div 
+                                id="currencyDropdown"
+                                class="hidden absolute top-full mt-1 w-full bg-white border-2 border-amber-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                                <!-- 動態生成的幣別選項 -->
+                            </div>
+                        </div>
+                        <input 
+                            type="hidden" 
                             id="currency" 
-                            name="currency"
-                            class="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-300 transition-all cursor-pointer"
-                            required>
-                            <option value="">-- 選擇幣別 --</option>
-                            <option value="USD">美元 (USD)</option>
-                            <option value="JPY">日圓 (JPY)</option>
-                            <option value="EUR">歐元 (EUR)</option>
-                            <option value="KRW">韓圓 (KRW)</option>
-                        </select>
+                            name="currency">
+                        <div id="selectedCurrency" class="mt-2 text-sm text-gray-600"></div>
                     </div>
 
                     <!-- 外幣金額 -->
                     <div class="form-group">
-                        <label class="block text-sm font-bold text-amber-900 mb-2">外幣金額 *</label>
+                        <label class="block text-sm font-bold text-amber-900 mb-2">金額 *</label>
                         <input 
                             type="number" 
                             id="foreignAmount" 
@@ -106,10 +114,11 @@
                             min="0"
                             class="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-300 transition-all"
                             required>
+                        <small class="text-gray-500 mt-1 block">💡 提示：選擇台幣可直接輸入台幣金額</small>
                     </div>
 
-                    <!-- 自動獲取匯率按鈕 -->
-                    <div class="flex gap-2">
+                    <!-- 自動獲取匯率按鈕 (僅非台幣時顯示) -->
+                    <div class="flex gap-2" id="fetchRateBtnContainer">
                         <button 
                             type="button"
                             id="fetchRateBtn"

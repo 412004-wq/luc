@@ -8,6 +8,25 @@ const GAS_DEPLOYMENT_URL = 'https://script.google.com/macros/d/{DEPLOYMENT_ID}/u
 // 本月預算上限（可根據需要修改）
 const MONTHLY_BUDGET = 10000;
 
+// 可用的貨幣列表（包含台幣）
+let availableCurrencies = {
+    'TWD': '台幣 (TWD)',
+    'USD': '美元 (USD)',
+    'JPY': '日圓 (JPY)',
+    'EUR': '歐元 (EUR)',
+    'KRW': '韓圓 (KRW)',
+    'GBP': '英鎊 (GBP)',
+    'AUD': '澳元 (AUD)',
+    'CAD': '加幣 (CAD)',
+    'SGD': '新加坡幣 (SGD)',
+    'HKD': '港幣 (HKD)',
+    'CNY': '人民幣 (CNY)',
+    'INR': '印度盧比 (INR)',
+    'MXN': '墨西哥比索 (MXN)',
+    'BRL': '巴西里亞爾 (BRL)',
+    'NZD': '紐西蘭幣 (NZD)'
+};
+
 // ============================================
 // 狀態管理
 // ============================================
@@ -25,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateBudgetProgress();
     setCurrentMonth();
     attachEventListeners();
+    initializeCurrencySearch();
 });
 
 // ============================================
@@ -50,6 +70,88 @@ function initializeUI() {
     // 表單欄位變化時即時計算
     document.getElementById('foreignAmount').addEventListener('input', calculateTWD);
     document.getElementById('exchangeRate').addEventListener('input', calculateTWD);
+}
+
+// ============================================
+// 幣別搜索功能
+// ============================================
+
+function initializeCurrencySearch() {
+    const searchInput = document.getElementById('currencySearch');
+    const dropdown = document.getElementById('currencyDropdown');
+    const currencyInput = document.getElementById('currency');
+
+    // 初始化顯示所有幣別
+    displayCurrencyDropdown(Object.keys(availableCurrencies), dropdown);
+
+    // 搜索功能
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toUpperCase();
+        
+        if (!searchTerm) {
+            displayCurrencyDropdown(Object.keys(availableCurrencies), dropdown);
+            dropdown.classList.remove('hidden');
+            return;
+        }
+
+        const filtered = Object.keys(availableCurrencies).filter(code =>
+            code.includes(searchTerm) || 
+            availableCurrencies[code].toUpperCase().includes(searchTerm)
+        );
+
+        if (filtered.length > 0) {
+            displayCurrencyDropdown(filtered, dropdown);
+            dropdown.classList.remove('hidden');
+        } else {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // 點擊外部關閉下拉菜單
+    document.addEventListener('click', (e) => {
+        if (e.target !== searchInput && e.target !== dropdown) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // 焦點時顯示下拉菜單
+    searchInput.addEventListener('focus', () => {
+        if (!searchInput.value) {
+            dropdown.classList.remove('hidden');
+        }
+    });
+}
+
+function displayCurrencyDropdown(codes, dropdown) {
+    dropdown.innerHTML = codes.map(code => `
+        <div class="px-4 py-2 cursor-pointer hover:bg-amber-100 transition-colors border-b border-amber-100 last:border-b-0"
+             onclick="selectCurrency('${code}')">
+            <span class="font-bold text-amber-900">${code}</span> - ${availableCurrencies[code]}
+        </div>
+    `).join('');
+}
+
+function selectCurrency(code) {
+    const searchInput = document.getElementById('currencySearch');
+    const currencyInput = document.getElementById('currency');
+    const selectedDisplay = document.getElementById('selectedCurrency');
+    const dropdown = document.getElementById('currencyDropdown');
+    const fetchBtnContainer = document.getElementById('fetchRateBtnContainer');
+
+    searchInput.value = code;
+    currencyInput.value = code;
+    selectedDisplay.textContent = `已選擇：${availableCurrencies[code]}`;
+    dropdown.classList.add('hidden');
+
+    // 如果選擇台幣，隱藏「自動獲取匯率」按鈕
+    if (code === 'TWD') {
+        fetchBtnContainer.classList.add('hidden');
+        document.getElementById('exchangeRate').value = '1';
+        calculateTWD();
+    } else {
+        fetchBtnContainer.classList.remove('hidden');
+        document.getElementById('exchangeRate').value = '';
+    }
 }
 
 // ============================================
@@ -95,29 +197,43 @@ async function handleFetchRate(e) {
 
     // 驗證
     if (!currency) {
-        showMessage('請先選擇幣別', 'error');
+        showMessage('❌ 請先選擇幣別', 'error');
+        return;
+    }
+
+    if (currency === 'TWD') {
+        showMessage('⚠️ 台幣無需匯率轉換', 'error');
         return;
     }
 
     if (!foreignAmount || foreignAmount <= 0) {
-        showMessage('請輸入有效的金額', 'error');
+        showMessage('❌ 請輸入有效的金額', 'error');
         return;
     }
 
-    // 顯示加載狀態
     showLoading(true);
+    document.getElementById('fetchRateBtn').disabled = true;
 
     try {
         // 呼叫 Frankfurter API (免費、無需Key)
-        const response = await fetch(
-            `https://api.frankfurter.dev/v1/latest?base=${currency}&symbols=TWD`
-        );
+        const url = `https://api.frankfurter.dev/v1/latest?base=${currency}&symbols=TWD`;
+        
+        console.log('正在調用 API:', url);
+        
+        const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error('無法獲取匯率資料');
+            throw new Error(`API 錯誤：${response.status}`);
         }
 
         const data = await response.json();
+        
+        console.log('API 響應:', data);
+
+        if (!data.rates || !data.rates.TWD) {
+            throw new Error('無法獲取匯率數據');
+        }
+
         const exchangeRate = data.rates.TWD;
 
         // 填入匯率欄位
@@ -130,9 +246,10 @@ async function handleFetchRate(e) {
 
     } catch (error) {
         console.error('匯率獲取失敗:', error);
-        showMessage('❌ 無法獲取匯率，請稍後重試或手動輸入', 'error');
+        showMessage(`❌ 無法獲取匯率：${error.message}，請檢查幣別是否正確或稍後重試`, 'error');
     } finally {
         showLoading(false);
+        document.getElementById('fetchRateBtn').disabled = false;
     }
 }
 
@@ -141,11 +258,21 @@ async function handleFetchRate(e) {
 // ============================================
 
 function calculateTWD() {
+    const currency = document.getElementById('currency').value;
     const foreignAmount = parseFloat(document.getElementById('foreignAmount').value) || 0;
     const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 0;
 
-    const twdAmount = (foreignAmount * exchangeRate).toFixed(2);
-    document.getElementById('twdAmount').value = twdAmount;
+    let twdAmount = 0;
+
+    // 如果是台幣，直接使用輸入的金額
+    if (currency === 'TWD') {
+        twdAmount = foreignAmount;
+    } else {
+        // 其他貨幣，計算為：外幣金額 × 匯率
+        twdAmount = foreignAmount * exchangeRate;
+    }
+
+    document.getElementById('twdAmount').value = twdAmount.toFixed(2);
 }
 
 // ============================================
@@ -155,25 +282,48 @@ function calculateTWD() {
 async function handleFormSubmit(e) {
     e.preventDefault();
 
+    const currency = document.getElementById('currency').value;
+    const foreignAmount = parseFloat(document.getElementById('foreignAmount').value) || 0;
+    const twdAmount = parseFloat(document.getElementById('twdAmount').value) || 0;
+    const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 0;
+
     const formData = {
         itemName: document.getElementById('itemName').value,
-        currency: document.getElementById('currency').value,
-        foreignAmount: parseFloat(document.getElementById('foreignAmount').value),
-        exchangeRate: parseFloat(document.getElementById('exchangeRate').value),
-        twdAmount: parseFloat(document.getElementById('twdAmount').value),
+        currency: currency,
+        foreignAmount: foreignAmount,
+        exchangeRate: exchangeRate,
+        twdAmount: twdAmount,
         notes: document.getElementById('notes').value,
         timestamp: new Date().toISOString(),
-        id: Date.now() // 簡單的唯一ID
+        id: Date.now()
     };
 
     // 驗證必填欄位
-    if (!formData.itemName || !formData.currency || !formData.foreignAmount) {
-        showMessage('❌ 請填寫所有必填欄位', 'error');
+    if (!formData.itemName) {
+        showMessage('❌ 請填寫消費項目', 'error');
         return;
     }
 
-    if (formData.exchangeRate <= 0 || formData.twdAmount <= 0) {
-        showMessage('❌ 請先獲取匯率', 'error');
+    if (!formData.currency) {
+        showMessage('❌ 請選擇幣別', 'error');
+        return;
+    }
+
+    if (formData.foreignAmount <= 0) {
+        showMessage('❌ 請輸入有效的金額', 'error');
+        return;
+    }
+
+    // 台幣不需要匯率驗證
+    if (currency !== 'TWD') {
+        if (exchangeRate <= 0) {
+            showMessage('❌ 請先點擊「自動獲取匯率換算」獲取匯率', 'error');
+            return;
+        }
+    }
+
+    if (formData.twdAmount <= 0) {
+        showMessage('❌ 折合台幣金額無效', 'error');
         return;
     }
 
@@ -183,7 +333,7 @@ async function handleFormSubmit(e) {
         // 發送到 Google Apps Script
         const response = await fetch(GAS_DEPLOYMENT_URL, {
             method: 'POST',
-            mode: 'no-cors', // 跨域請求
+            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -196,8 +346,13 @@ async function handleFormSubmit(e) {
 
         // 重置表單
         document.getElementById('expenseForm').reset();
+        document.getElementById('currency').value = '';
+        document.getElementById('currencySearch').value = '';
+        document.getElementById('selectedCurrency').textContent = '';
         document.getElementById('exchangeRate').value = '';
         document.getElementById('twdAmount').value = '';
+        document.getElementById('currencyDropdown').classList.add('hidden');
+        document.getElementById('fetchRateBtnContainer').classList.remove('hidden');
 
         // 更新預算進度
         updateBudgetProgress();
@@ -375,6 +530,8 @@ function openSideDrawer(expenseId) {
     const drawer = document.getElementById('sideDrawer');
     const backdrop = document.getElementById('drawerBackdrop');
 
+    // 確保背景顯示
+    backdrop.style.display = 'block';
     drawer.classList.add('active');
     backdrop.classList.add('active');
 }
@@ -385,6 +542,13 @@ function closeSideDrawer() {
 
     drawer.classList.remove('active');
     backdrop.classList.remove('active');
+    
+    // 確保背景完全隱藏
+    setTimeout(() => {
+        if (!drawer.classList.contains('active')) {
+            backdrop.style.display = 'none';
+        }
+    }, 300);
 }
 
 // ============================================

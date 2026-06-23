@@ -169,7 +169,12 @@ body::before {
     transform: translateX(0);
 }
 
+#drawerBackdrop {
+    display: none;
+}
+
 #drawerBackdrop.active {
+    display: block;
     opacity: 0.5;
     pointer-events: auto;
 }
