@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多國貨幣記帳儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 min-h-screen font-serif">
+    <!-- 頭部預算進度區 -->
+    <div class="sticky top-0 z-40 bg-white bg-opacity-95 backdrop-blur-sm shadow-lg border-b-2 border-amber-200">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between mb-3">
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-amber-700 to-orange-600 bg-clip-text text-transparent">
+                    💰 多國貨幣記帳儀表板
+                </h1>
+                <div class="text-sm text-gray-600">
+                    <span id="currentMonth" class="font-semibold"></span>
+                </div>
+            </div>
+            
+            <!-- 預算進度條 -->
+            <div class="mb-3">
+                <div class="flex justify-between items-end mb-2">
+                    <label class="text-sm font-semibold text-amber-900">本月預算進度</label>
+                    <span class="text-xs text-gray-600">
+                        <span id="spentAmount">0</span> / 
+                        <span id="budgetAmount">10000</span> TWD
+                    </span>
+                </div>
+                <div class="relative h-4 bg-amber-100 rounded-full overflow-hidden border border-amber-300 shadow-inner">
+                    <div 
+                        id="budgetProgressBar"
+                        class="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-500 ease-out shadow-md"
+                        style="width: 0%">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <!-- 分頁按鈕 -->
+        <div class="flex gap-4 mb-8 tab-buttons" role="tablist">
+            <button 
+                class="tab-btn active px-8 py-3 bg-white font-bold text-amber-900 border-b-4 border-orange-500 rounded-t-lg shadow-md hover:shadow-lg transition-all duration-300 handwritten-text"
+                data-tab="add-expense"
+                role="tab"
+                aria-selected="true">
+                ➕ 新增消費
+            </button>
+            <button 
+                class="tab-btn px-8 py-3 bg-white font-semibold text-gray-600 border-b-2 border-gray-300 rounded-t-lg shadow-md hover:shadow-lg transition-all duration-300 handwritten-text"
+                data-tab="history"
+                role="tab"
+                aria-selected="false">
+                📋 歷史流水帳
+            </button>
+        </div>
+
+        <!-- 新增消費分頁 -->
+        <div id="add-expense-tab" class="tab-content active">
+            <div class="bg-white rounded-lg shadow-xl border-4 border-amber-200 p-8 form-card">
+                <h2 class="text-2xl font-bold text-amber-900 mb-6 handwritten-text">記錄新消費</h2>
+                
+                <form id="expenseForm" class="space-y-6">
+                    <!-- 消費項目 -->
+                    <div class="form-group">
+                        <label class="block text-sm font-bold text-amber-900 mb-2">消費項目 *</label>
+                        <input 
+                            type="text" 
+                            id="itemName" 
+                            name="itemName"
+                            placeholder="例：機票、飯店、購物..."
+                            class="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-300 transition-all"
+                            required>
+                    </div>
+
+                    <!-- 外幣幣別 -->
+                    <div class="form-group">
+                        <label class="block text-sm font-bold text-amber-900 mb-2">外幣幣別 *</label>
+                        <select 
+                            id="currency" 
+                            name="currency"
+                            class="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-300 transition-all cursor-pointer"
+                            required>
+                            <option value="">-- 選擇幣別 --</option>
+                            <option value="USD">美元 (USD)</option>
+                            <option value="JPY">日圓 (JPY)</option>
+                            <option value="EUR">歐元 (EUR)</option>
+                            <option value="KRW">韓圓 (KRW)</option>
+                        </select>
+                    </div>
+
+                    <!-- 外幣金額 -->
+                    <div class="form-group">
+                        <label class="block text-sm font-bold text-amber-900 mb-2">外幣金額 *</label>
+                        <input 
+                            type="number" 
+                            id="foreignAmount" 
+                            name="foreignAmount"
+                            placeholder="輸入金額（如：100.50）"
+                            step="0.01"
+                            min="0"
+                            class="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-300 transition-all"
+                            required>
+                    </div>
+
+                    <!-- 自動獲取匯率按鈕 -->
+                    <div class="flex gap-2">
+                        <button 
+                            type="button"
+                            id="fetchRateBtn"
+                            class="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95">
+                            🔄 自動獲取匯率換算
+                        </button>
+                    </div>
+
+                    <!-- 即時匯率 -->
+                    <div class="form-group">
+                        <label class="block text-sm font-bold text-amber-900 mb-2">即時匯率</label>
+                        <input 
+                            type="number" 
+                            id="exchangeRate" 
+                            name="exchangeRate"
+                            placeholder="匯率將自動填入"
+                            step="0.0001"
+                            min="0"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                            readonly>
+                    </div>
+
+                    <!-- 折合台幣 -->
+                    <div class="form-group">
+                        <label class="block text-sm font-bold text-amber-900 mb-2">折合台幣 (TWD)</label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-orange-600">$</span>
+                            <input 
+                                type="number" 
+                                id="twdAmount" 
+                                name="twdAmount"
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                                class="flex-1 px-4 py-3 border-2 border-amber-300 rounded-lg bg-amber-50 text-gray-700 font-bold text-lg"
+                                readonly>
+                        </div>
+                    </div>
+
+                    <!-- 消費備註 -->
+                    <div class="form-group">
+                        <label class="block text-sm font-bold text-amber-900 mb-2">消費備註</label>
+                        <textarea 
+                            id="notes" 
+                            name="notes"
+                            placeholder="記錄購買細節或特殊說明..."
+                            rows="3"
+                            class="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-300 transition-all resize-none"></textarea>
+                    </div>
+
+                    <!-- 提交按鈕 -->
+                    <button 
+                        type="submit"
+                        class="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg rounded-lg hover:shadow-xl transition-all duration-300 transform hover:scale-102 active:scale-95">
+                        💾 儲存消費
+                    </button>
+                </form>
+
+                <!-- 加載狀態指示 -->
+                <div id="loadingIndicator" class="hidden mt-4 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg text-center">
+                    <span class="text-blue-700 font-semibold">⏳ 正在處理中...</span>
+                </div>
+
+                <!-- 成功/錯誤訊息 -->
+                <div id="messageBox" class="hidden mt-4 p-4 rounded-lg border-2 font-semibold text-center"></div>
+            </div>
+        </div>
+
+        <!-- 歷史流水帳分頁 -->
+        <div id="history-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-xl border-4 border-amber-200 p-8">
+                <h2 class="text-2xl font-bold text-amber-900 mb-6 handwritten-text">消費紀錄</h2>
+                
+                <div id="expenseList" class="space-y-4">
+                    <div class="text-center py-12 text-gray-500">
+                        <p class="text-lg">目前沒有記錄，快去新增第一筆消費吧！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右側詳細面板 -->
+    <div 
+        id="sideDrawer"
+        class="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-out z-50 border-l-4 border-orange-500 overflow-y-auto">
+        
+        <div class="p-6">
+            <!-- 關閉按鈕 -->
+            <button 
+                id="closeDrawer"
+                class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors">
+                ✕
+            </button>
+
+            <!-- 詳細內容 -->
+            <div id="drawerContent">
+                <!-- 動態填入 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 半透明背景 -->
+    <div 
+        id="drawerBackdrop"
+        class="fixed inset-0 bg-black opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+/* ============================================
+   自定義樣式 & 手繪風格
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+/* 手繪字體應用 */
+.handwritten-text {
+    font-family: 'Caveat', 'Kalam', cursive;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* 背景手繪效果 */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(248, 113, 113, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ============================================
+   分頁切換動畫
+   ============================================ */
+
+.tab-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.tab-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.tab-btn:hover::before {
+    left: 100%;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #ffffff, #fef3c7);
+    border-bottom-color: #f97316;
+    color: #b45309;
+}
+
+/* 內容區塊淡入動畫 */
+.tab-content {
+    animation: fadeIn 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.tab-content.active {
+    opacity: 1;
+    animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   表單卡片手繪效果
+   ============================================ */
+
+.form-card {
+    position: relative;
+    background: linear-gradient(135deg, #ffffff 0%, #fef3c7 100%);
+}
+
+/* 手繪邊框效果 */
+.form-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 4px solid #fbbf24;
+    border-radius: 0.5rem;
+    opacity: 0.5;
+    pointer-events: none;
+    box-shadow: 
+        inset 0 0 8px rgba(249, 115, 22, 0.1),
+        0 0 15px rgba(251, 146, 60, 0.2);
+}
+
+/* 表單群組 */
+.form-group {
+    position: relative;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    font-family: inherit;
+    letter-spacing: 0.3px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1),
+                inset 0 0 4px rgba(249, 115, 22, 0.2);
+}
+
+/* ============================================
+   預算進度條動畫
+   ============================================ */
+
+#budgetProgressBar {
+    box-shadow: 
+        0 0 10px rgba(249, 115, 22, 0.5),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    background-image: 
+        linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.3) 50%,
+            transparent 100%
+        );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* ============================================
+   側邊欄動畫
+   ============================================ */
+
+#sideDrawer {
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+}
+
+#sideDrawer.active {
+    transform: translateX(0);
+}
+
+#drawerBackdrop.active {
+    opacity: 0.5;
+    pointer-events: auto;
+}
+
+/* ============================================
+   消費列表項動畫
+   ============================================ */
+
+.expense-item {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: slideInUp 0.5s ease-out forwards;
+}
+
+.expense-item:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.expense-item:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.expense-item:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.expense-item:hover {
+    background: linear-gradient(135deg, #fef3c7, #fed7aa);
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.expense-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f97316, #fb923c);
+    transition: width 0.3s ease;
+}
+
+.expense-item:hover::after {
+    width: 100%;
+}
+
+/* ============================================
+   按鈕動畫
+   ============================================ */
+
+button {
+    position: relative;
+    overflow: hidden;
+}
+
+button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+button:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* ============================================
+   訊息提示 (Success/Error)
+   ============================================ */
+
+.message-success {
+    background-color: #dcfce7;
+    border-color: #22c55e;
+    color: #166534;
+    animation: slideDown 0.4s ease-out;
+}
+
+.message-error {
+    background-color: #fee2e2;
+    border-color: #ef4444;
+    color: #7f1d1d;
+    animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   加載狀態
+   ============================================ */
+
+#loadingIndicator {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* ============================================
+   響應式設計
+   ============================================ */
+
+@media (max-width: 768px) {
+    #sideDrawer {
+        width: 100%;
+        max-width: 90%;
+    }
+
+    .tab-btn {
+        flex: 1;
+        text-align: center;
+        font-size: 0.875rem;
+    }
+
+    .form-card {
+        padding: 1.5rem;
+    }
+}
+
+/* ============================================
+   微妙的手繪不規則效果
+   ============================================ */
+
+.form-card,
+.expense-item,
+#sideDrawer {
+    /* 微妙的旋轉效果 - 很輕微 */
+    transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+}
+
+/* 文字陰影效果 (手繪感) */
+h1, h2 {
+    text-shadow: 2px 2px 0px rgba(251, 191, 36, 0.3);
+}
+
+/* ============================================
+   過度工程防止：禁止卡片翻面
+   ============================================ */
+
+/* 明確禁止所有翻面相關的變換 */
+.expense-item {
+    backface-visibility: visible !important;
+    transform: none !important;
+    perspective: none !important;
+}
+
+.expense-item * {
+    transform: none !important;
+    backface-visibility: visible !important;
+}
+
+/* 確保沒有3D翻轉 */
+@supports (animation: test) {
+    .expense-item {
+        animation: slideInUp 0.5s ease-out forwards;
+        /* 禁止任何3D變換 */
+    }
+}
