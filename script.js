@@ -7,6 +7,8 @@ const GAS_DEPLOYMENT_URL = 'https://script.google.com/macros/d/{DEPLOYMENT_ID}/u
 
 // 本月預算上限（可根據需要修改）
 const MONTHLY_BUDGET = 10000;
+const BUDGET_STORAGE_KEY = 'monthlyBudget';
+let monthlyBudget = MONTHLY_BUDGET;
 
 // 可用的貨幣列表（包含台幣）
 let availableCurrencies = {
@@ -41,6 +43,8 @@ let currentMonth = new Date();
 document.addEventListener('DOMContentLoaded', () => {
     initializeUI();
     loadExpensesFromLocalStorage();
+    loadBudgetFromLocalStorage();
+    renderExpenseList();
     updateBudgetProgress();
     setCurrentMonth();
     attachEventListeners();
@@ -70,6 +74,13 @@ function initializeUI() {
     // 表單欄位變化時即時計算
     document.getElementById('foreignAmount').addEventListener('input', calculateTWD);
     document.getElementById('exchangeRate').addEventListener('input', calculateTWD);
+
+    // 預算設定
+    const budgetInput = document.getElementById('budgetInput');
+    if (budgetInput) {
+        budgetInput.addEventListener('change', saveBudgetFromInput);
+        budgetInput.addEventListener('blur', saveBudgetFromInput);
+    }
 }
 
 // ============================================
@@ -92,6 +103,7 @@ function initializeCurrencySearch() {
         if (!searchTerm) {
             displayCurrencyDropdown(codes, dropdown);
             dropdown.classList.remove('hidden');
+            currencyInput.value = '';
             return;
         }
 
@@ -102,6 +114,7 @@ function initializeCurrencySearch() {
 
         displayCurrencyDropdown(filtered, dropdown);
         dropdown.classList.toggle('hidden', filtered.length === 0);
+        currencyInput.value = '';
     });
 
     // 點擊外部關閉下拉菜單
@@ -124,16 +137,27 @@ function initializeCurrencySearch() {
         if (e.key === 'Enter') {
             e.preventDefault();
             const searchTerm = searchInput.value.trim().toUpperCase();
+            if (!searchTerm) return;
+
             const exact = Object.keys(availableCurrencies).find(code => code === searchTerm);
             if (exact) {
                 selectCurrency(exact);
                 return;
             }
+
             const partial = Object.keys(availableCurrencies).find(code =>
                 code.startsWith(searchTerm) || availableCurrencies[code].toUpperCase().startsWith(searchTerm)
             );
             if (partial) {
                 selectCurrency(partial);
+                return;
+            }
+
+            const fallback = Object.keys(availableCurrencies).find(code =>
+                availableCurrencies[code].toUpperCase().includes(searchTerm)
+            );
+            if (fallback) {
+                selectCurrency(fallback);
             }
         }
     });
@@ -155,6 +179,8 @@ function selectCurrency(code) {
     const dropdown = document.getElementById('currencyDropdown');
     const fetchBtnContainer = document.getElementById('fetchRateBtnContainer');
 
+    if (!availableCurrencies[code]) return;
+
     searchInput.value = code;
     currencyInput.value = code;
     selectedDisplay.textContent = `已選擇：${availableCurrencies[code]}`;
@@ -169,6 +195,37 @@ function selectCurrency(code) {
         fetchBtnContainer.classList.remove('hidden');
         document.getElementById('exchangeRate').value = '';
     }
+}
+
+function ensureCurrencySelected() {
+    const currencyInput = document.getElementById('currency');
+    const searchInput = document.getElementById('currencySearch');
+    const currentCurrency = currencyInput.value.trim().toUpperCase();
+
+    if (currentCurrency && availableCurrencies[currentCurrency]) {
+        return true;
+    }
+
+    const searchValue = searchInput.value.trim().toUpperCase();
+    if (!searchValue) return false;
+
+    // 完全匹配幣別代碼
+    if (availableCurrencies[searchValue]) {
+        selectCurrency(searchValue);
+        return true;
+    }
+
+    // 部分匹配幣別名稱或代碼
+    const matchedCode = Object.keys(availableCurrencies).find(code =>
+        code.startsWith(searchValue) ||
+        availableCurrencies[code].toUpperCase().includes(searchValue)
+    );
+    if (matchedCode) {
+        selectCurrency(matchedCode);
+        return true;
+    }
+
+    return false;
 }
 
 // ============================================
@@ -208,6 +265,11 @@ function handleTabSwitch(e) {
 
 async function handleFetchRate(e) {
     e.preventDefault();
+
+    if (!ensureCurrencySelected()) {
+        showMessage('❌ 請先選擇或輸入有效的幣別代碼，例如 USD、JPY、TWD', 'error');
+        return;
+    }
 
     const currency = document.getElementById('currency').value;
     const foreignAmount = document.getElementById('foreignAmount').value;
@@ -297,6 +359,11 @@ function calculateTWD() {
 async function handleFormSubmit(e) {
     e.preventDefault();
 
+    if (!ensureCurrencySelected()) {
+        showMessage('❌ 請先選擇或輸入有效的幣別代碼，例如 USD、JPY、TWD', 'error');
+        return;
+    }
+
     const currency = document.getElementById('currency').value;
     const foreignAmount = parseFloat(document.getElementById('foreignAmount').value) || 0;
     const twdAmount = parseFloat(document.getElementById('twdAmount').value) || 0;
@@ -371,6 +438,7 @@ async function handleFormSubmit(e) {
 
         // 更新預算進度
         updateBudgetProgress();
+        renderExpenseList();
 
         showMessage('✓ 消費已成功記錄！', 'success');
 
@@ -407,13 +475,13 @@ function updateBudgetProgress() {
     const totalSpent = thisMonthExpenses.reduce((sum, exp) => sum + exp.twdAmount, 0);
 
     // 更新進度條寬度
-    const percentage = Math.min((totalSpent / MONTHLY_BUDGET) * 100, 100);
+    const percentage = Math.min((totalSpent / monthlyBudget) * 100, 100);
     const progressBar = document.getElementById('budgetProgressBar');
     progressBar.style.width = percentage + '%';
 
     // 更新數字顯示
     document.getElementById('spentAmount').textContent = totalSpent.toFixed(0);
-    document.getElementById('budgetAmount').textContent = MONTHLY_BUDGET;
+    document.getElementById('budgetAmount').textContent = monthlyBudget;
 
     // 根據使用比例改變顏色
     if (percentage > 90) {
@@ -597,6 +665,34 @@ function loadExpensesFromLocalStorage() {
             expenses = [];
         }
     }
+}
+
+function loadBudgetFromLocalStorage() {
+    const storedBudget = localStorage.getItem(BUDGET_STORAGE_KEY);
+    if (storedBudget && !isNaN(parseFloat(storedBudget))) {
+        monthlyBudget = parseFloat(storedBudget);
+    }
+    const budgetInput = document.getElementById('budgetInput');
+    if (budgetInput) {
+        budgetInput.value = monthlyBudget;
+    }
+}
+
+function saveBudgetFromInput() {
+    const budgetInput = document.getElementById('budgetInput');
+    if (!budgetInput) return;
+
+    const value = parseFloat(budgetInput.value);
+    if (Number.isNaN(value) || value <= 0) {
+        showMessage('❌ 請輸入有效的本月預算數字', 'error');
+        budgetInput.value = monthlyBudget;
+        return;
+    }
+
+    monthlyBudget = value;
+    localStorage.setItem(BUDGET_STORAGE_KEY, monthlyBudget);
+    updateBudgetProgress();
+    showMessage(`✓ 已更新本月預算：${monthlyBudget} TWD`, 'success');
 }
 
 // ============================================

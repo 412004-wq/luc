@@ -163,6 +163,8 @@ body::before {
 
 #sideDrawer {
     box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+    transform: translateX(100%);
+    transition: transform 0.3s ease-out;
 }
 
 #sideDrawer.active {
@@ -334,8 +336,7 @@ button:active::after {
    ============================================ */
 
 .form-card,
-.expense-item,
-#sideDrawer {
+.expense-item {
     /* 微妙的旋轉效果 - 很輕微 */
     transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
 }

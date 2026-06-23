@@ -22,12 +22,26 @@
             
             <!-- 預算進度條 -->
             <div class="mb-3">
-                <div class="flex justify-between items-end mb-2">
-                    <label class="text-sm font-semibold text-amber-900">本月預算進度</label>
-                    <span class="text-xs text-gray-600">
-                        <span id="spentAmount">0</span> / 
-                        <span id="budgetAmount">10000</span> TWD
-                    </span>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-3">
+                    <div>
+                        <label class="text-sm font-semibold text-amber-900">本月預算進度</label>
+                        <div class="text-xs text-gray-600">
+                            <span id="spentAmount">0</span> / 
+                            <span id="budgetAmount">10000</span> TWD
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="budgetInput" class="text-sm font-semibold text-amber-900">本月預算</label>
+                        <input
+                            id="budgetInput"
+                            type="number"
+                            min="0"
+                            step="100"
+                            class="w-32 px-3 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-300"
+                            placeholder="10000"
+                            value="10000"
+                        />
+                    </div>
                 </div>
                 <div class="relative h-4 bg-amber-100 rounded-full overflow-hidden border border-amber-300 shadow-inner">
                     <div 
